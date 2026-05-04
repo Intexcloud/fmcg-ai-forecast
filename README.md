@@ -1,5 +1,7 @@
 # 📦 FMCG Sales Actuals & AI Forecasting Dashboard
 
+Deployment Link : https://fmcg-ai-forecast.streamlit.app/
+
 A comprehensive data web application built with Streamlit to visualize actual sales trends and AI-driven forecasts for Fast-Moving Consumer Goods (FMCG). This dashboard provides dynamic, interactive insights into product performance, growth metrics, and forecasting accuracy.
 
 ## 🚀 Features
