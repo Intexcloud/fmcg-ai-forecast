@@ -27,11 +27,26 @@ To run this dashboard locally on your machine, follow these steps:
 ```bash
 git clone [https://github.com/yourusername/fmcg-ai-forecast.git](https://github.com/yourusername/fmcg-ai-forecast.git)
 cd fmcg-ai-forecast
+```
 
 **2. Create a virtual environment (optional but recommended):**
 ```bash
 python -m venv venv
-source venv/bin/activate  # On Windows use: venv\Scripts\activate
+source venv/bin/activate
+# On Windows use: venv\Scripts\activate
+# On Linux/Mac use : source env/bin/activate 
+
+```
+
+**3. Install the required dependencies:**
+```bash
+pip install -r requirements.txt
+```
+
+**4. Run the Streamlit app:**
+```bash
+streamlit run app.py
+```
 
 
 
