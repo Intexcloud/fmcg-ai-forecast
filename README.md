@@ -32,10 +32,8 @@ cd fmcg-ai-forecast
 **2. Create a virtual environment (optional but recommended):**
 ```bash
 python -m venv venv
-source venv/bin/activate
-# On Windows use: venv\Scripts\activate
-# On Linux/Mac use : source env/bin/activate 
-
+env\\Scripts\\activate  # Windows
+source env/bin/activate # Linux/Mac
 ```
 
 **3. Install the required dependencies:**
