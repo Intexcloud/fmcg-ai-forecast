@@ -32,7 +32,7 @@ st.sidebar.header("🛠️ Filter Dashboard")
 
 daftar_produk = raw_df['sku'].unique().tolist()
 daftar_produk.sort()
-pilih_produk = st.sidebar.selectbox("Select Analysis (SKU):", ["All Products (Total Sales)"] + daftar_produk)
+pilih_produk = st.sidebar.selectbox("Pilih Analisis (SKU):", ["Semua Produk (Total Sales)"] + daftar_produk)
 
 min_date = raw_df['Date'].min().date()
 max_date = raw_df['Date'].max().date()
@@ -48,24 +48,34 @@ filt_fcst = fcst_df[(fcst_df['Date'].dt.date >= start_date) & (fcst_df['Date'].d
 # ==========================================
 st.title("📦 FMCG Sales Actuals & AI Forecasting")
 
-if pilih_produk == "All Products (Total Sales)":
+if pilih_produk == "Semua Produk (Total Sales)":
     plot_raw = filt_raw.groupby('Date')['Sales'].sum().reset_index()
     plot_fcst = filt_fcst.groupby('Date')['Forecast'].sum(min_count=1).reset_index()
-    st.subheader("Overall Trend (Grand Total of All Products)")
+    st.subheader("Tren Keseluruhan (Grand Total Semua Produk)")
 else:
     plot_raw = filt_raw[filt_raw['sku'] == pilih_produk]
     plot_fcst = filt_fcst[filt_fcst['sku'] == pilih_produk]
-    st.subheader(f"Product Sales Trends: {pilih_produk}")
+    st.subheader(f"Tren Penjualan Produk: {pilih_produk}")
 
-col1, col2 = st.columns(2)
+# METRIK UTAMA (Kini Menjadi 3 Kolom)
+col1, col2, col3 = st.columns(3)
+
+# 1. Grand Total Aktual (Dari Awal sd Akhir Filter)
 total_actual = plot_raw['Sales'].sum()
 
-split_date = fcst_df['Date'].max() - pd.DateOffset(months=5)
-test_fcst = plot_fcst[plot_fcst['Date'] >= split_date]
+# 2. Total Aktual Khusus 6 Bulan Terakhir
+split_date_actual = raw_df['Date'].max() - pd.DateOffset(months=5)
+last_6m_raw = plot_raw[plot_raw['Date'] >= split_date_actual]
+total_actual_6m = last_6m_raw['Sales'].sum() if not last_6m_raw.empty else 0
+
+# 3. Total Prediksi Khusus 6 Bulan Terakhir
+split_date_fcst = fcst_df['Date'].max() - pd.DateOffset(months=5)
+test_fcst = plot_fcst[plot_fcst['Date'] >= split_date_fcst]
 total_forecast = test_fcst['Forecast'].sum() if not test_fcst.empty else 0
 
-col1.metric("Actual Grand Total (Real)", f"{total_actual:,.0f} Unit")
-col2.metric("Total AI Prediction (Future)", f"{total_forecast:,.0f} Unit" if total_forecast > 0 else "N/A")
+col1.metric("Grand Total Aktual", f"{total_actual:,.0f} Unit")
+col2.metric("Aktual 6 Bulan Terakhir", f"{total_actual_6m:,.0f} Unit")
+col3.metric("Prediksi AI 6 Bln Terakhir", f"{total_forecast:,.0f} Unit" if total_forecast > 0 else "N/A")
 
 fig = go.Figure()
 fig.add_trace(go.Scatter(
@@ -84,7 +94,7 @@ st.plotly_chart(fig, use_container_width=True)
 # 4. TOP 3 PRODUK FORECAST
 # ==========================================
 st.markdown("---")
-st.subheader("🏆 Top 3 Products with the Highest Demand Potential")
+st.subheader("🏆 Top 3 Produk dengan Potensi Demand Tertinggi")
 
 valid_fcst = filt_fcst.dropna(subset=['Forecast'])
 
@@ -97,7 +107,7 @@ if not valid_fcst.empty:
     
     cols = st.columns(3)
     for i, (index, row) in enumerate(top_3.iterrows()):
-        cols[i].metric(label=f"{medali[i]} Rank {i+1}: {row['sku']}", value=f"{row['Forecast']:,.0f} Unit")
+        cols[i].metric(label=f"{medali[i]} Peringkat {i+1}: {row['sku']}", value=f"{row['Forecast']:,.0f} Unit")
 
     fig_top = go.Figure(go.Bar(
         x=top_3['Forecast'], y=top_3['sku'], orientation='h', marker_color=warna[::-1], 
@@ -110,80 +120,70 @@ if not valid_fcst.empty:
     )
     st.plotly_chart(fig_top, use_container_width=True)
 else:
-    st.info("⚠️ There is no forecasting data in the date range you selected.")
+    st.info("⚠️ Tidak ada data forecasting di rentang tanggal yang Anda pilih.")
 
 # ==========================================
 # 5. VISUALISASI TAMBAHAN
 # ==========================================
 st.markdown("---")
-st.subheader("📊 Composition Analysis & Prediction Accuracy")
+st.subheader("📊 Analisis Komposisi & Akurasi Prediksi")
 
 col_v1, col_v2 = st.columns(2)
 
-# Visual Kiri: Donut Chart atau Growth Chart
 with col_v1:
-    if pilih_produk == "All Products (Total Sales)":
+    if pilih_produk == "Semua Produk (Total Sales)":
         pie_data = filt_raw.groupby('sku')['Sales'].sum().reset_index()
-        fig_pie = px.pie(pie_data, values='Sales', names='sku', hole=0.4, title='Actual Market Share per Product')
+        fig_pie = px.pie(pie_data, values='Sales', names='sku', hole=0.4, title='Market Share Aktual per Produk')
         fig_pie.update_traces(textposition='inside', textinfo='percent+label')
         fig_pie.update_layout(template="plotly_dark", showlegend=False)
         st.plotly_chart(fig_pie, use_container_width=True)
     else:
-        # Tampilkan MoM Growth jika filter 1 produk
         growth_df = plot_raw.copy()
-        growth_df = growth_df.sort_values('Date') # Pastikan urut waktu
+        growth_df = growth_df.sort_values('Date')
         growth_df['Growth %'] = growth_df['Sales'].pct_change() * 100
-        
-        # PERBAIKAN: Buang baris pertama yang bernilai NaN agar tidak error saat diwarnai
         growth_df = growth_df.dropna(subset=['Growth %'])
         
         if not growth_df.empty:
-            fig_growth = px.bar(growth_df, x='Date', y='Growth %', title=f'Monthly Growth (MoM): {pilih_produk}',
+            fig_growth = px.bar(growth_df, x='Date', y='Growth %', title=f'Pertumbuhan Bulanan (MoM): {pilih_produk}',
                                 color='Growth %', color_continuous_scale=px.colors.diverging.RdYlGn)
             fig_growth.update_layout(template="plotly_dark")
             st.plotly_chart(fig_growth, use_container_width=True)
         else:
-            st.info("⚠️ It takes at least 2 months of consecutive data to calculate the growth percentage.")
+            st.info("⚠️ Butuh setidaknya 2 bulan data berurutan untuk menghitung persentase pertumbuhan.")
 
-# Visual Kanan: Distribusi Error (Over vs Under Forecast)
 with col_v2:
     err_df = plot_fcst.dropna(subset=['Forecast']).copy()
     
     if not err_df.empty:
-        # PERBAIKAN: Jika kolom 'Sales' sudah ada, kita buang dulu agar 
-        # saat di-merge tidak duplikat menjadi 'Sales_x' dan 'Sales_y'
         if 'Sales' in err_df.columns:
             err_df = err_df.drop(columns=['Sales'])
             
-        # Gabungkan secara aman dengan data aktual
         err_df = pd.merge(err_df, plot_raw[['Date', 'Sales']], on='Date', how='left')
-        
-        # Hapus baris jika aktualnya belum ada (mencegah error NaN)
         err_df = err_df.dropna(subset=['Sales'])
         
         if not err_df.empty:
             err_df['Selisih'] = err_df['Forecast'] - err_df['Sales']
-            err_df['Kategori'] = err_df['Selisih'].apply(lambda x: 'Over Forecast (Remaining Stock Risk)' if x > 0 else 'Under Forecast (Risk of Understock)')
+            err_df['Kategori'] = err_df['Selisih'].apply(lambda x: 'Over Forecast (Risiko Sisa Stok)' if x > 0 else 'Under Forecast (Risiko Kurang Stok)')
             
             fig_err = px.bar(err_df, x='Date', y='Selisih', color='Kategori',
-                             title='AI Prediction vs Actual Difference Analysis',
-                             color_discrete_map={'Over Forecast (Remaining Stock Risk)': '#1f77b4', 'Under Forecast (Risk of Understock)': '#d62728'})
-            fig_err.update_layout(template="plotly_dark", barmode='relative', yaxis_title="Unit Difference")
+                             title='Analisis Selisih Prediksi AI vs Aktual',
+                             color_discrete_map={'Over Forecast (Risiko Sisa Stok)': '#1f77b4', 'Under Forecast (Risiko Kurang Stok)': '#d62728'})
+            fig_err.update_layout(template="plotly_dark", barmode='relative', yaxis_title="Selisih Unit")
             st.plotly_chart(fig_err, use_container_width=True)
         else:
-            st.info("⚠️ There is no actual sales data during the prediction period to calculate the difference.")
+            st.info("⚠️ Belum ada data penjualan aktual di masa prediksi untuk menghitung selisih.")
     else:
-        st.info("⚠️ Difference (error) data is not available in this time range.")
+        st.info("⚠️ Data selisih (error) tidak tersedia di rentang waktu ini.")
 
 # ==========================================
 # 6. TABEL DATA RINCIAN SKU
 # ==========================================
 st.markdown("---")
-st.subheader("📋 Complete Details of Data per SKU")
+st.subheader("📋 Rincian Lengkap Data per SKU")
 
 tabel_forecast = filt_fcst.dropna(subset=['Forecast']).copy()
 
-if pilih_produk != "All Products (Total Sales)":
+if pilih_produk != "Semua Produk (Total Sales)":
     tabel_forecast = tabel_forecast[tabel_forecast['sku'] == pilih_produk]
 
 if not tabel_forecast.empty:
@@ -201,4 +201,4 @@ if not tabel_forecast.empty:
 
     st.dataframe(display_df, use_container_width=True, hide_index=True)
 else:
-    st.info("⚠️ The time period you selected has no history/AI predictions.")
+    st.info("⚠️ Periode waktu yang Anda pilih tidak memiliki riwayat/prediksi AI.")
