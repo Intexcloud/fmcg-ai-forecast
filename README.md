@@ -27,3 +27,11 @@ To run this dashboard locally on your machine, follow these steps:
 ```bash
 git clone [https://github.com/yourusername/fmcg-ai-forecast.git](https://github.com/yourusername/fmcg-ai-forecast.git)
 cd fmcg-ai-forecast
+
+**2. Create a virtual environment (optional but recommended):**
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows use: venv\Scripts\activate
+
+
+
