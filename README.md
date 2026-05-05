@@ -28,8 +28,8 @@ A comprehensive data web application built with Streamlit to visualize actual sa
 ## 📂 Data Sources
 
 This application relies on two core datasets (included in this repository):
-1. `FMCG_2022_2024.csv` - Contains the historical and actual monthly sales units per SKU[cite: 1].
-2. `FMCG_SKU_Forecast_Best.csv` - Contains the machine learning forecast results per SKU[cite: 1].
+1. `FMCG_2022_2024.csv` - Contains the historical and actual monthly sales units per SKU.
+2. `FMCG_SKU_Forecast_Best.csv` - Contains the machine learning forecast results per SKU.
 
 ## 🛠️ Installation & Setup
 
